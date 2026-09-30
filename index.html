@@ -75,7 +75,7 @@ main{
   text-align:center;
 }
 .clock{
-  display:flex;align-items:flex-start;gap:clamp(8px,min(2.4vw,2.6dvh),22px);
+  direction:ltr;display:flex;align-items:flex-start;gap:clamp(8px,min(2.4vw,2.6dvh),22px);
   font-family:"Geist Mono",ui-monospace,monospace;
   font-variant-numeric:tabular-nums;
 }
@@ -155,6 +155,7 @@ body.zero .flash{animation:flash 2.4s ease-out forwards}
 body.zero .clock,body.zero .ring{display:none}
 body.zero .done{display:block;animation:arrive 2.4s var(--ease) .5s both}
 
+html.nols .lab{letter-spacing:0;text-transform:none;padding-left:0}
 @media (max-width:600px){
   main{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:clamp(20px,4dvh,36px);padding-bottom:max(12dvh,24px)}
   .stage{width:min(92vw,58dvh)}
@@ -186,24 +187,24 @@ body.zero .done{display:block;animation:arrive 2.4s var(--ease) .5s both}
     </svg>
     <div class="readout">
       <div class="clock" id="clock" role="timer" aria-live="off">
-        <div class="unit"><span class="num" data-u="d">00</span><span class="lab">Tage</span></div>
+        <div class="unit"><span class="num" data-u="d">00</span><span class="lab" data-i="d">Tage</span></div>
         <span class="sep" aria-hidden="true">:</span>
-        <div class="unit"><span class="num" data-u="h">00</span><span class="lab">Std</span></div>
+        <div class="unit"><span class="num" data-u="h">00</span><span class="lab" data-i="h">Std</span></div>
         <span class="sep" aria-hidden="true">:</span>
-        <div class="unit"><span class="num" data-u="m">00</span><span class="lab">Min</span></div>
+        <div class="unit"><span class="num" data-u="m">00</span><span class="lab" data-i="m">Min</span></div>
         <span class="sep" aria-hidden="true">:</span>
-        <div class="unit"><span class="num" data-u="s">00</span><span class="lab">Sek</span></div>
+        <div class="unit"><span class="num" data-u="s">00</span><span class="lab" data-i="s">Sek</span></div>
       </div>
-      <div class="done" id="done">Jetzt.</div>
+      <div class="done" id="done" data-i="done">Jetzt.</div>
     </div>
   </section>
 
   <section class="notify">
-    <p>Wake Up</p>
+    <p translate="no">Wake Up</p>
     <form id="form" novalidate>
-      <label class="sr" for="email">E-Mail-Adresse</label>
-      <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="deine@email.de" required>
-      <button type="submit">Benachrichtige mich</button>
+      <label class="sr" for="email" data-i="label">E-Mail-Adresse</label>
+      <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" required>
+      <button type="submit" data-i="btn">Benachrichtige mich</button>
     </form>
     <div class="msg" id="msg" role="status" aria-live="polite"></div>
   </section>
@@ -216,6 +217,42 @@ const TARGET = "2026-12-04T20:00:00+01:00";
 // Where e-mails are sent (POST, JSON). Paste a Formspree / Basin / own endpoint here.
 // Empty = addresses are only kept in this browser's localStorage (no real collection).
 const ENDPOINT = "";
+
+/* ===== Language ===== */
+// Picks the visitor's browser language. Test with ?lang=es
+const L = {
+  en:{d:"Days",h:"Hrs",m:"Min",s:"Sec",btn:"Notify me",label:"Email address",bad:"Please enter a valid email address.",ok:"You're in. We'll reach out the moment it begins.",fail:"That didn't work. Please try again.",done:"Now."},
+  de:{d:"Tage",h:"Std",m:"Min",s:"Sek",btn:"Benachrichtige mich",label:"E-Mail-Adresse",bad:"Bitte gib eine gültige E-Mail-Adresse ein.",ok:"Du bist dabei. Wir melden uns, sobald es soweit ist.",fail:"Das hat nicht geklappt. Versuch es bitte noch einmal.",done:"Jetzt."},
+  es:{d:"Días",h:"Hrs",m:"Min",s:"Seg",btn:"Avísame",label:"Correo electrónico",bad:"Introduce un correo electrónico válido.",ok:"Estás dentro. Te avisaremos en cuanto empiece.",fail:"No ha funcionado. Inténtalo de nuevo.",done:"Ahora."},
+  fr:{d:"Jours",h:"H",m:"Min",s:"Sec",btn:"Me prévenir",label:"Adresse e-mail",bad:"Saisissez une adresse e-mail valide.",ok:"C'est noté. Nous vous préviendrons dès le début.",fail:"Échec. Veuillez réessayer.",done:"Maintenant."},
+  it:{d:"Giorni",h:"Ore",m:"Min",s:"Sec",btn:"Avvisami",label:"Indirizzo e-mail",bad:"Inserisci un indirizzo e-mail valido.",ok:"Ci sei. Ti avviseremo appena inizia.",fail:"Non ha funzionato. Riprova.",done:"Ora."},
+  pt:{d:"Dias",h:"Hrs",m:"Min",s:"Seg",btn:"Avise-me",label:"Endereço de e-mail",bad:"Insira um e-mail válido.",ok:"Você está dentro. Avisaremos assim que começar.",fail:"Não funcionou. Tente novamente.",done:"Agora."},
+  nl:{d:"Dagen",h:"Uur",m:"Min",s:"Sec",btn:"Houd me op de hoogte",label:"E-mailadres",bad:"Voer een geldig e-mailadres in.",ok:"Je staat erop. We laten het weten zodra het begint.",fail:"Dat is niet gelukt. Probeer het opnieuw.",done:"Nu."},
+  pl:{d:"Dni",h:"Godz",m:"Min",s:"Sek",btn:"Powiadom mnie",label:"Adres e-mail",bad:"Podaj prawidłowy adres e-mail.",ok:"Jesteś na liście. Damy znać, gdy się zacznie.",fail:"Nie udało się. Spróbuj ponownie.",done:"Teraz."},
+  tr:{d:"Gün",h:"Saat",m:"Dk",s:"Sn",btn:"Haber ver",label:"E-posta adresi",bad:"Geçerli bir e-posta adresi gir.",ok:"Listedesin. Başlar başlamaz haber vereceğiz.",fail:"Olmadı. Lütfen tekrar dene.",done:"Şimdi."},
+  ru:{d:"Дни",h:"Часы",m:"Мин",s:"Сек",btn:"Сообщить мне",label:"Адрес эл. почты",bad:"Введите корректный адрес эл. почты.",ok:"Вы в списке. Мы сообщим, как только начнётся.",fail:"Не получилось. Попробуйте ещё раз.",done:"Сейчас."},
+  uk:{d:"Дні",h:"Год",m:"Хв",s:"Сек",btn:"Повідомити мене",label:"Адреса ел. пошти",bad:"Введіть коректну адресу ел. пошти.",ok:"Ви в списку. Повідомимо, щойно почнеться.",fail:"Не вийшло. Спробуйте ще раз.",done:"Зараз."},
+  ja:{d:"日",h:"時間",m:"分",s:"秒",btn:"通知する",label:"メールアドレス",bad:"有効なメールアドレスを入力してください。",ok:"登録しました。始まったらすぐにお知らせします。",fail:"失敗しました。もう一度お試しください。",done:"今。"},
+  ko:{d:"일",h:"시간",m:"분",s:"초",btn:"알림 받기",label:"이메일 주소",bad:"올바른 이메일 주소를 입력하세요.",ok:"등록되었습니다. 시작되면 바로 알려드릴게요.",fail:"실패했습니다. 다시 시도해 주세요.",done:"지금."},
+  zh:{d:"天",h:"时",m:"分",s:"秒",btn:"通知我",label:"电子邮件地址",bad:"请输入有效的电子邮件地址。",ok:"已加入。开始的那一刻我们会通知你。",fail:"提交失败，请重试。",done:"现在。"},
+  ar:{d:"أيام",h:"ساعات",m:"دقائق",s:"ثوان",btn:"أخبرني",label:"البريد الإلكتروني",bad:"أدخل بريدًا إلكترونيًا صالحًا.",ok:"تم تسجيلك. سنخبرك فور البدء.",fail:"لم تنجح العملية. حاول مرة أخرى.",done:"الآن."},
+  hi:{d:"दिन",h:"घंटे",m:"मिनट",s:"सेकंड",btn:"मुझे सूचित करें",label:"ईमेल पता",bad:"कृपया मान्य ईमेल दर्ज करें।",ok:"आप जुड़ गए हैं। शुरू होते ही हम बताएँगे।",fail:"नहीं हो सका। कृपया फिर कोशिश करें।",done:"अभी।"},
+  id:{d:"Hari",h:"Jam",m:"Mnt",s:"Det",btn:"Beri tahu saya",label:"Alamat email",bad:"Masukkan alamat email yang valid.",ok:"Kamu terdaftar. Kami akan mengabari begitu dimulai.",fail:"Gagal. Silakan coba lagi.",done:"Sekarang."},
+  sv:{d:"Dagar",h:"Tim",m:"Min",s:"Sek",btn:"Meddela mig",label:"E-postadress",bad:"Ange en giltig e-postadress.",ok:"Du är med. Vi hör av oss så fort det börjar.",fail:"Det gick inte. Försök igen.",done:"Nu."},
+  cs:{d:"Dny",h:"Hod",m:"Min",s:"Sek",btn:"Upozornit mě",label:"E-mailová adresa",bad:"Zadejte platnou e-mailovou adresu.",ok:"Jste v seznamu. Ozveme se, jakmile to začne.",fail:"Nepodařilo se. Zkuste to znovu.",done:"Teď."},
+  ro:{d:"Zile",h:"Ore",m:"Min",s:"Sec",btn:"Anunță-mă",label:"Adresă de e-mail",bad:"Introdu o adresă de e-mail validă.",ok:"Ești în listă. Te anunțăm imediat ce începe.",fail:"Nu a mers. Încearcă din nou.",done:"Acum."},
+  el:{d:"Μέρες",h:"Ώρες",m:"Λεπτά",s:"Δευτ",btn:"Ειδοποίησέ με",label:"Διεύθυνση email",bad:"Εισάγετε έγκυρο email.",ok:"Είσαι μέσα. Θα σε ειδοποιήσουμε μόλις ξεκινήσει.",fail:"Δεν λειτούργησε. Δοκίμασε ξανά.",done:"Τώρα."},
+  he:{d:"ימים",h:"שעות",m:"דק׳",s:"שנ׳",btn:"עדכנו אותי",label:"כתובת אימייל",bad:"הזן כתובת אימייל תקינה.",ok:"נרשמת. נעדכן ברגע שזה מתחיל.",fail:"זה לא עבד. נסה שוב.",done:"עכשיו."}
+};
+const code = c => (c || "").toLowerCase().split("-")[0].replace("nb", "sv").replace("no", "sv").replace("da", "sv");
+const wanted = [new URLSearchParams(location.search).get("lang"), ...(navigator.languages || [navigator.language])];
+const lang = wanted.map(code).find(c => L[c]) || "en";
+const t = L[lang];
+const root = document.documentElement;
+root.lang = lang;
+if (lang === "ar" || lang === "he") root.dir = "rtl";
+if (["ar", "he", "hi", "ja", "ko", "zh"].includes(lang)) root.classList.add("nols");
+document.querySelectorAll("[data-i]").forEach(el => el.textContent = t[el.dataset.i]);
 
 /* ===== Countdown ===== */
 const q = new URLSearchParams(location.search);
@@ -267,7 +304,7 @@ function tick() {
     const tension = s <= 60 ? 1 - s / 60 : 0;
     document.documentElement.style.setProperty("--tension", tension.toFixed(3));
     document.body.classList.toggle("final", s <= 60 && s > 0);
-    document.title = s > 0 ? `${pad(Math.floor(s / 86400))}:${pad(Math.floor(s % 86400 / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}` : "Jetzt.";
+    document.title = s > 0 ? `${pad(Math.floor(s / 86400))}:${pad(Math.floor(s % 86400 / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}` : t.done;
   }
   if (left === 0 && !zero) { zero = true; document.body.classList.add("zero"); fog.burst = 1; }
   requestAnimationFrame(tick);
@@ -340,7 +377,7 @@ form.addEventListener("submit", async e => {
   const v = email.value.trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) {
     form.classList.remove("bad"); void form.offsetWidth; form.classList.add("bad");
-    say("Bitte gib eine gültige E-Mail-Adresse ein.", "err"); email.focus(); return;
+    say(t.bad, "err"); email.focus(); return;
   }
   btn.disabled = true; say("");
   try {
@@ -351,9 +388,9 @@ form.addEventListener("submit", async e => {
       try { const l = JSON.parse(localStorage.getItem("notify") || "[]"); if (!l.includes(v)) l.push(v); localStorage.setItem("notify", JSON.stringify(l)); } catch {}
     }
     form.style.display = "none";
-    say("Du bist dabei. Wir melden uns, sobald es soweit ist.", "ok");
+    say(t.ok, "ok");
   } catch {
-    btn.disabled = false; say("Das hat nicht geklappt. Versuch es bitte noch einmal.", "err");
+    btn.disabled = false; say(t.fail, "err");
   }
 });
 </script>
