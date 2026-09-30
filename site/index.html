@@ -37,6 +37,9 @@ body{
   overflow-x:hidden;
 }
 #fog{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+.glyphs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.glyph{position:absolute;left:0;top:0;will-change:transform,opacity;opacity:0;filter:blur(4px)}
+.glyph svg{display:block;width:100%;height:100%;overflow:visible}
 .vignette{
   position:fixed;inset:0;z-index:1;pointer-events:none;
   background:radial-gradient(ellipse at 50% 50%,transparent calc(62% - var(--tension)*26%),rgba(0,0,0,.92) 100%);
@@ -192,6 +195,7 @@ html.nols .lab{letter-spacing:0;text-transform:none;padding-left:0}
 </head>
 <body>
 <canvas id="fog" aria-hidden="true"></canvas>
+<div class="glyphs" id="glyphs" aria-hidden="true"></div>
 <div class="vignette" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="flash" aria-hidden="true"></div>
@@ -389,6 +393,57 @@ function draw(t) {
 }
 if (reduced) draw(0); else requestAnimationFrame(draw);
 requestAnimationFrame(tick);
+
+/* ===== Drifting sigils ===== */
+// Every 20 to 100 seconds one to three unreadable sigils drift slowly through the background.
+// Each one is generated at random, so no two are ever the same. Test: ?g=1 (fast cycle)
+const glyphLayer = document.getElementById("glyphs");
+const R = (a, b) => a + Math.random() * (b - a);
+function sigil() {
+  const NS2 = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS2, "svg");
+  svg.setAttribute("viewBox", "-50 -50 100 100");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "#c9b6ff");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  const add = (tag, attrs) => { const e = document.createElementNS(NS2, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); svg.appendChild(e); return e; };
+  const pt = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
+  if (Math.random() < .75) add("circle", { r: R(38, 44), "stroke-dasharray": Math.random() < .5 ? "none" : `${R(1, 3)} ${R(3, 9)}` });
+  if (Math.random() < .4) add("circle", { r: R(10, 22) });
+  const n = 3 + Math.floor(Math.random() * 5), base = R(0, 6.28);
+  const pts = Array.from({ length: n }, () => pt(base + R(0, 6.28), R(14, 34)));
+  for (let i = pts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pts[i], pts[j]] = [pts[j], pts[i]]; }
+  const d = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("") + (Math.random() < .5 ? "Z" : "");
+  add("path", { d });
+  pts.forEach(p => { if (Math.random() < .55) add("circle", { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: R(1.4, 3), fill: "#c9b6ff", stroke: "none" }); });
+  for (let i = 0, k = Math.floor(R(0, 4)); i < k; i++) { const a = R(0, 6.28), p1 = pt(a, 44), p2 = pt(a, R(47, 50)); add("path", { d: `M${p1[0].toFixed(1)} ${p1[1].toFixed(1)}L${p2[0].toFixed(1)} ${p2[1].toFixed(1)}` }); }
+  if (Math.random() < .5) add("path", { d: `M0 ${-R(20, 34)}V${R(20, 34)}` });
+  return svg;
+}
+function drift() {
+  const count = Math.random() < .55 ? 1 : (Math.random() < .6 ? 2 : 3);
+  const ltr = Math.random() < .5, dur = R(34000, 52000) * (q.get("g") ? .25 : 1);
+  const y0 = R(.1, .8) * innerHeight, rot = R(-12, 12);
+  for (let i = 0; i < count; i++) {
+    const size = R(120, 260), el = document.createElement("div");
+    el.className = "glyph"; el.style.width = el.style.height = size + "px";
+    el.style.filter = `blur(${R(3, 6).toFixed(1)}px)`;
+    el.appendChild(sigil()); glyphLayer.appendChild(el);
+    const gap = i * R(260, 420), y = y0 + R(-70, 70) * i;
+    const from = ltr ? -size - gap : innerWidth + size + gap, to = ltr ? innerWidth + size - gap * 0 : -size;
+    const peak = R(.16, .3);
+    const frames = reduced
+      ? [{ opacity: 0, transform: `translate(${innerWidth / 2 - size / 2 + i * 40}px,${y}px)` }, { opacity: peak, offset: .3 }, { opacity: peak, offset: .7 }, { opacity: 0 }]
+      : [{ opacity: 0, transform: `translate(${from}px,${y}px) rotate(${rot}deg)` }, { opacity: peak, offset: .18 }, { opacity: peak, offset: .82 }, { opacity: 0, transform: `translate(${to}px,${y + R(-40, 40)}px) rotate(${-rot}deg)` }];
+    el.animate(frames, { duration: dur + i * 4000, easing: "linear", fill: "both" }).onfinish = () => el.remove();
+  }
+}
+(function schedule(first) {
+  const wait = q.get("g") ? 6000 : (first ? R(9000, 16000) : R(20000, 100000));
+  setTimeout(() => { if (!zero) drift(); schedule(false); }, q.get("g") && first ? 1000 : wait);
+})(true);
 
 /* ===== E-Mail form ===== */
 const form = document.getElementById("form"), email = document.getElementById("email"), msg = document.getElementById("msg");
