@@ -10,8 +10,10 @@
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
+<link rel="canonical" href="https://realgoodworld.eu/">
 <meta property="og:title" content="Bald">
-<meta property="og:image" content="/og-image.png">
+<meta property="og:url" content="https://realgoodworld.eu/">
+<meta property="og:image" content="https://realgoodworld.eu/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <style>
 @font-face{font-family:"Geist";src:url("fonts/geist-latin-wght-normal.woff2") format("woff2");font-weight:100 900;font-display:swap}
@@ -154,6 +156,12 @@ button{
 button:hover{background:var(--accent)}
 button:active{transform:scale(.97)}
 button[disabled]{opacity:.5;cursor:default}
+.legal{font-size:10px;line-height:1.5;color:var(--ink-dim);opacity:.6;text-align:center;letter-spacing:.02em;max-width:34ch}
+.legal a{color:inherit;text-decoration:underline;text-decoration-color:rgba(233,236,234,.25);text-underline-offset:2px}
+.foot{position:fixed;z-index:3;left:0;right:0;bottom:max(10px,env(safe-area-inset-bottom));text-align:center;font-size:10px;letter-spacing:.06em;opacity:.3;transition:opacity .3s}
+.foot:hover,.foot:focus-within{opacity:.75}
+.foot a{color:var(--ink);text-decoration:none;padding:6px 4px}
+.foot span{margin:0 4px}
 .msg{min-height:18px;font-size:13px;font-weight:600;color:var(--ink-dim);letter-spacing:.03em;transition:color .3s}
 .msg.ok{color:var(--accent)}
 .msg.err{color:#c98a86}
@@ -233,8 +241,11 @@ html.nols .lab{letter-spacing:0;text-transform:none;padding-left:0}
       <button type="submit" data-i="btn">Benachrichtige mich</button>
     </form>
     <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <div class="legal" id="legal"></div>
   </section>
 </main>
+
+<nav class="foot" aria-label="Rechtliches"><a href="datenschutz.html">Datenschutz</a><span aria-hidden="true">&middot;</span><a href="impressum.html">Impressum</a></nav>
 
 <script>
 /* ===== Configuration ===== */
@@ -270,6 +281,14 @@ const L = {
   el:{d:"Μέρες",h:"Ώρες",m:"Λεπτά",s:"Δευτ",btn:"Ειδοποίησέ με",label:"Διεύθυνση email",bad:"Εισάγετε έγκυρο email.",ok:"Είσαι μέσα. Θα σε ειδοποιήσουμε μόλις ξεκινήσει.",fail:"Δεν λειτούργησε. Δοκίμασε ξανά.",done:"Τώρα."},
   he:{d:"ימים",h:"שעות",m:"דק׳",s:"שנ׳",btn:"עדכנו אותי",label:"כתובת אימייל",bad:"הזן כתובת אימייל תקינה.",ok:"נרשמת. נעדכן ברגע שזה מתחיל.",fail:"זה לא עבד. נסה שוב.",done:"עכשיו."}
 };
+const CONSENT = {
+  de: 'Mit dem Absenden stimmst du der <a href="datenschutz.html">Datenschutzerklärung</a> zu.',
+  en: 'By submitting you agree to the <a href="datenschutz.html">privacy policy</a> (German).',
+  es: 'Al enviar aceptas la <a href="datenschutz.html">política de privacidad</a> (en alemán).',
+  fr: 'En envoyant, vous acceptez la <a href="datenschutz.html">politique de confidentialité</a> (en allemand).',
+  it: 'Inviando accetti l\'<a href="datenschutz.html">informativa sulla privacy</a> (in tedesco).',
+  pt: 'Ao enviar, você concorda com a <a href="datenschutz.html">política de privacidade</a> (em alemão).'
+};
 const code = c => (c || "").toLowerCase().split("-")[0].replace("nb", "sv").replace("no", "sv").replace("da", "sv");
 const wanted = [new URLSearchParams(location.search).get("lang"), ...(navigator.languages || [navigator.language])];
 const lang = wanted.map(code).find(c => L[c]) || "en";
@@ -278,6 +297,7 @@ const root = document.documentElement;
 root.lang = lang;
 if (lang === "ar" || lang === "he") root.dir = "rtl";
 if (["ar", "he", "hi", "ja", "ko", "zh"].includes(lang)) root.classList.add("nols");
+document.getElementById("legal").innerHTML = CONSENT[lang] || CONSENT.en;
 document.querySelectorAll("[data-i]").forEach(el => el.textContent = t[el.dataset.i]);
 
 /* ===== Countdown ===== */
