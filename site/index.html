@@ -423,21 +423,37 @@ function sigil() {
   return svg;
 }
 function drift() {
-  const count = Math.random() < .55 ? 1 : (Math.random() < .6 ? 2 : 3);
-  const ltr = Math.random() < .5, dur = R(34000, 52000) * (q.get("g") ? .25 : 1);
-  const y0 = R(.1, .8) * innerHeight, rot = R(-12, 12);
+  // Random path through the whole background: any angle, from any edge, or radially in/out of the centre.
+  const count = Math.random() < .5 ? 1 : (Math.random() < .6 ? 2 : 3);
+  const W0 = innerWidth, H0 = innerHeight, cxp = W0 / 2, cyp = H0 / 2, diag = Math.hypot(W0, H0);
+  const mode = Math.random() < .25 ? (Math.random() < .5 ? "out" : "in") : "line";
+  const th = R(0, 6.283), dx = Math.cos(th), dy = Math.sin(th), px = -dy, py = dx;
+  const off = R(-.5, .5) * Math.abs(px * W0 + py * H0) * .9;     // sideways offset of the whole path
+  const speed = R(28, 48) * (q.get("g") ? 3 : 1), rot = R(-14, 14);
   for (let i = 0; i < count; i++) {
-    const size = R(120, 260), el = document.createElement("div");
+    const size = R(120, 270), el = document.createElement("div");
     el.className = "glyph"; el.style.width = el.style.height = size + "px";
     el.style.filter = `blur(${R(3, 6).toFixed(1)}px)`;
     el.appendChild(sigil()); glyphLayer.appendChild(el);
-    const gap = i * R(260, 420), y = y0 + R(-70, 70) * i;
-    const from = ltr ? -size - gap : innerWidth + size + gap, to = ltr ? innerWidth + size - gap * 0 : -size;
+    const gap = i * R(240, 400), side = off + (i ? R(-90, 90) : 0), half = size / 2;
+    let x0, y0, x1, y1, sc0 = 1, sc1 = 1;
+    if (mode === "line") {
+      const len = diag + size * 2;
+      x0 = cxp - dx * (len / 2 + gap) + px * side - half; y0 = cyp - dy * (len / 2 + gap) + py * side - half;
+      x1 = cxp + dx * (len / 2) + px * side - half;       y1 = cyp + dy * (len / 2) + py * side - half;
+    } else {
+      const edge = diag / 2 + size, cx0 = cxp + dx * gap * .3 - half, cy0 = cyp + dy * gap * .3 - half;
+      const ex = cxp + dx * edge - half, ey = cyp + dy * edge - half;
+      if (mode === "out") { x0 = cx0; y0 = cy0; x1 = ex; y1 = ey; sc0 = .25; sc1 = 1.6; }
+      else { x0 = ex; y0 = ey; x1 = cx0; y1 = cy0; sc0 = 1.6; sc1 = .25; }
+    }
+    const dist = Math.hypot(x1 - x0, y1 - y0), dur = Math.max(18000, dist / speed * 1000);
     const peak = R(.16, .3);
+    const T = (x, y, sc, r) => `translate(${x.toFixed(0)}px,${y.toFixed(0)}px) rotate(${r}deg) scale(${sc})`;
     const frames = reduced
-      ? [{ opacity: 0, transform: `translate(${innerWidth / 2 - size / 2 + i * 40}px,${y}px)` }, { opacity: peak, offset: .3 }, { opacity: peak, offset: .7 }, { opacity: 0 }]
-      : [{ opacity: 0, transform: `translate(${from}px,${y}px) rotate(${rot}deg)` }, { opacity: peak, offset: .18 }, { opacity: peak, offset: .82 }, { opacity: 0, transform: `translate(${to}px,${y + R(-40, 40)}px) rotate(${-rot}deg)` }];
-    el.animate(frames, { duration: dur + i * 4000, easing: "linear", fill: "both" }).onfinish = () => el.remove();
+      ? [{ opacity: 0, transform: T(R(.1, .8) * W0 - half, R(.1, .8) * H0 - half, 1, 0) }, { opacity: peak, offset: .3 }, { opacity: peak, offset: .7 }, { opacity: 0 }]
+      : [{ opacity: 0, transform: T(x0, y0, sc0, rot) }, { opacity: peak, offset: .18 }, { opacity: peak, offset: .82 }, { opacity: 0, transform: T(x1, y1, sc1, -rot) }];
+    el.animate(frames, { duration: dur, easing: "linear", fill: "both" }).onfinish = () => el.remove();
   }
 }
 (function schedule(first) {
